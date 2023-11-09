@@ -70,5 +70,52 @@ def parse_instance(file):
     return [[c_0,c_p,c_ft,v_0,c_max,p_max,c_lt],S,V_t,V_s,Q_0,Q_s,omega]
 
 
+def find_type(liste_de_couples, i_cherche):
+    for i, k in liste_de_couples:
+        if i == i_cherche:
+            return k
+    return None
+
+def save_sol(x,y,z,I):
+    V_s = I[3]
+    V_t = I[2]
+    S = I[1]
+    Q_0 = I[4]
+    Q_s = I[5]
+    omega = I[6]
+
+    file_path = "solutions/sol.json"
+
+    data = {}
+
+    data['substations'] = []
+
+    for key, value in x.items():
+        d_s = {}
+        d_s['id'] = key[0]
+        d_s['land_cable_type'] = find_type(y[0],key[0])
+        d_s['substation_type'] = key[1]
+        data['substations'].append(d_s)
+
+    data['turbines'] = []
+
+    for key, value in z.items():
+        d_t = {}
+        d_t['id'] = key[0]
+        d_t['substation_id'] = key[1]
+        data['turbines'].append(d_t)
+    
+    data['substation_substation_cables'] = []
+
+    for c in y[1]:
+        d_s = {}
+        d_s['substation_id'] = c[0]
+        d_s['other_substation_id'] = c[1]
+        d_s['cable_type'] = c[3]
+        data['substation_substation_cables'].append(d_s)
+
+
+    with open(file_path, 'w') as json_file:
+        json.dump(data, json_file)
 
 print(parse_instance('tiny.json'))
