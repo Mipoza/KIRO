@@ -44,7 +44,7 @@ def draw_data(data):
     # Create a figure and axis
     fig, ax = plt.subplots()
 
-    r = 1
+    r = 0.1
 
     # Draw a red filled circle for each wind turbine
     for v in V_t.values():
@@ -62,10 +62,10 @@ def draw_data(data):
 
     # Adapt the x axis
     plt.xlim(-5, 85)
-    plt.ylim(-5, 85)
+    plt.ylim(-10, 10)
 
     # Display the plot
     plt.show()
 
 
-draw_data(data)
+# draw_data(data)
