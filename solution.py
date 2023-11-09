@@ -37,8 +37,6 @@ def improve_nbr_ss(x, y, z, I):
     # pour chaque sous station
     # pour chaque turbine, est-ce que le cout diminue si on passe par la nouvelle sous station
 
-    max_it = 3
-    it = 0
     for s in V_s:
         print(cout)
         x2 = x.copy()
@@ -74,19 +72,24 @@ def improve_type_ss(x, y, z, I):
 
     # pour chaque sous station on change le type de sous station si cela diminue le cout
     for s in V_s:
-        for j in S.keys()-1:
+        for j in S.keys() - 1:
             print(cout)
             x2 = x.copy()
             x2[(s, j)] = 0
-            x2[(s, j+1)] = 1
+            x2[(s, j + 1)] = 1
 
             cout2 = total_cost(x2, y, z, I)
             if cout2 < cout:
                 x = x2
                 cout = cout2
         x2[(s, S.keys())] = 0
-    
+
     return (x, y, z, I)
+
 
 def solution_moins_naive(I):
     return improve_nbr_ss(*solution_naive(I))
+
+
+def solution_encore_moins_naive(x, y, z, I):
+    return improve_type_ss(*solution_moins_naive(I))
