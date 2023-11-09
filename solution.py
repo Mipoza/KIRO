@@ -37,6 +37,8 @@ def improve_nbr_ss(x, y, z, I):
     # pour chaque sous station
     # pour chaque turbine, est-ce que le cout diminue si on passe par la nouvelle sous station
 
+    max_it = 3
+    it = 0
     for s in V_s:
         print(cout)
         x2 = x.copy()
@@ -48,12 +50,12 @@ def improve_nbr_ss(x, y, z, I):
 
         for t in V_t:
             z2 = z.copy()
-            # on relie la nouvelle sous station à la turbine et on enlève la liaison avec la sous station auquel elle était reliée
-            z2[(s, t)] = 1
 
             # retrouver l'indice s2 de la sous station vérifiant z2(s2,t)==1
             s2 = [key[0] for key, value in z2.items() if value == 1 and key[1] == t][0]
             z2[(s2, t)] = 0
+            # on relie la nouvelle sous station à la turbine et on enlève la liaison avec la sous station auquel elle était reliée
+            z2[(s, t)] = 1
 
             cout2 = total_cost(x2, [y0, y[1]], z2, I)
             if cout2 < cout:

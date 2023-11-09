@@ -10,9 +10,10 @@ def main():
 
     # draw_data(instance)
 
-    x, y, z, I = solution_naive(instance)
-    print(total_cost(*solution_naive(instance)[:-1], I))
-    print(total_cost(*solution_moins_naive(instance)[:-1], I))
+    print(total_cost(*solution_naive(instance)[:-1], instance))
+
+    x, y, z, I = solution_moins_naive(instance)
+    print(total_cost(x, y, z, I))
 
     draw_solution(x, y, z, I)
 
