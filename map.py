@@ -69,3 +69,51 @@ def draw_data(data):
 
 
 # draw_data(data)
+
+
+def draw_solution(x, y, z, I):
+    V_t = I[2]
+    V_s = I[3]
+    S = I[1]
+
+    # Create a figure and axis
+    fig, ax = plt.subplots()
+
+    r = 0.1
+
+    # Draw a red filled circle for each wind turbine
+    for t in V_t.values():
+        circle = plt.Circle(t, r, fill=True, color="red")
+        ax.add_patch(circle)
+
+    # Draw a blue circle for each substation
+    for s in V_s:
+        # s'il existe une sous-station ie il existe j tel que x[(s,j)]==1
+        for j in S:
+            if x[(s, j)] == 1:
+                # Draw a line from the substation to the land
+                plt.plot([V_s[s][0], 0], [V_s[s][1], 0], color="green")
+                # Draw a line from the substation s to the turbines t si z[(s,t)]==1
+                for t in V_t:
+                    if z[(s, t)] == 1:
+                        plt.plot(
+                            [V_s[s][0], V_t[t][0]],
+                            [V_s[s][1], V_t[t][1]],
+                            color="red",
+                        )
+            circle = plt.Circle(V_s[s], r, fill=True, color="blue")
+            ax.add_patch(circle)
+    for s in V_s:
+        circle = plt.Circle(V_s[s], r, fill=True, color="blue")
+        ax.add_patch(circle)
+
+    # Draw a green circle for the land station (in 0,0)
+    circle = plt.Circle([0, 0], r, fill=True, color="green")
+    ax.add_patch(circle)
+
+    # Adapt the x axis
+    plt.xlim(-5, 85)
+    plt.ylim(-10, 10)
+
+    # Display the plot
+    plt.show()
