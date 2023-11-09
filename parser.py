@@ -76,7 +76,7 @@ def find_type(liste_de_couples, i_cherche):
             return k
     return None
 
-def save_sol(x,y,z,I):
+def save_sol(x,y,z,I,i):
     V_s = I[3]
     V_t = I[2]
     S = I[1]
@@ -84,7 +84,7 @@ def save_sol(x,y,z,I):
     Q_s = I[5]
     omega = I[6]
 
-    file_path = "solutions/sol.json"
+    file_path = "solutions/sol"+str(i) +".json"
 
     data = {}
 
