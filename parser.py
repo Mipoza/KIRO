@@ -93,9 +93,11 @@ def save_sol(x,y,z,I,i):
     for key, value in x.items():
         d_s = {}
         d_s['id'] = key[0]
-        d_s['land_cable_type'] = find_type(y[0],key[0])
-        d_s['substation_type'] = key[1]
-        data['substations'].append(d_s)
+        t = find_type(y[0],key[0])
+        if None != t:
+            d_s['land_cable_type'] = find_type(y[0],key[0])
+            d_s['substation_type'] = key[1]
+            data['substations'].append(d_s)
 
     data['turbines'] = []
 
