@@ -1,10 +1,12 @@
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
+from parser import parse_instance
+from map import draw_data
 
-from sklearn.preprocessing import StandardScaler  # To normalize features
 
-from sklearn.cluster import AgglomerativeClustering  # For HAC
-from sklearn.cluster import KMeans  # For K-means
+def main():
+    file = "instances/small.json"
+    instance = parse_instance(file)
 
-import geopandas as gpd  # For maps
+    draw_data(instance)
+
+
+main()
