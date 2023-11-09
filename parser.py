@@ -1,10 +1,6 @@
 import json
-
-#parameter of an instance
-
-Q_0 = {}
-Q_s = {}
-
+from collections import defaultdict
+from math import sqrt
 
 def parse_instance(file):
     f = open('instances/'+file)
@@ -35,11 +31,47 @@ def parse_instance(file):
     cabletype_subsub = data['substation_substation_cable_types'] #never fail
     Q_s = {cbts['id']: [cbts['fixed_cost'], cbts['rating'], cbts['variable_cost']] for cbts in cabletype_subsub}
     
+    wind_sen = data['wind_scenarios']
+    omega = {s['id']: [s['probability'], s['power_generation']] for s in wind_sen}
+
     f.close()
 
-    return [[c_0,c_p,c_ft,v_0,c_max,p_max,c_lt],S,V_t,V_s,Q_0,Q_s]
+    return [[c_0,c_p,c_ft,v_0,c_max,p_max,c_lt],S,V_t,V_s,Q_0,Q_s,omega]
 
-def parse_sol(file):
+
+def length(v_s,v_t):
+    return sqrt((v_s['x']-v_t['x'])**2 +  (v_s['y']-v_t['y'])**2 )
+
+def const_cost(x,y,z,I):
+    p_gen = I[0]
+    S = I[1]
+    V_t = I[2]
+    V_s = I[3]
+    Q_0 = I[4]
+    Q_s = I[5]
+    omega = I[6]
+
+
+    c = 0
+
+    for i in V_s:
+        for j in S:
+            c += x[(i,j)]*S[j][0]
+
+    for i in V_s:
+        for j in V_t:
+            if z[(i,j)]:
+                c += z[(i,j)]*(p_gen[2]+p_gen[6]*length(V_s[i],V_t[j]))
+
+    #y[0] = [[i,j],...]
+    y = [[],[]]
+    for h in y[0]:
+        c += Q_0[h[1]][0] + Q_0[h[1]][3] 
+
+def op_cost(x,y,z,I):
     pass
 
-print(parse_instance('toy.json'))
+def total_cost(x,y,z,I):
+    return total_cost(x,y,z,I)
+
+print(parse_instance('tiny.json'))
