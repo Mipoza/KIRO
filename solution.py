@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from cost import const_cost
+from cost import total_cost
 
 
 def solution_naive(I):
@@ -32,12 +32,13 @@ def improve_nbr_ss(x, y, z, I):
     V_t = I[2]
     S = I[1]
 
-    cout = const_cost(x, y, z, I)
+    cout = total_cost(x, y, z, I)
 
     # pour chaque sous station
     # pour chaque turbine, est-ce que le cout diminue si on passe par la nouvelle sous station
 
     for s in V_s:
+        print(cout)
         x2 = x.copy()
         y0 = y[0].copy()
 
@@ -54,11 +55,12 @@ def improve_nbr_ss(x, y, z, I):
             s2 = [key[0] for key, value in z2.items() if value == 1 and key[1] == t][0]
             z2[(s2, t)] = 0
 
-            if const_cost(x2, [y0, y[1]], z2, I) < cout:
+            cout2 = total_cost(x2, [y0, y[1]], z2, I)
+            if cout2 < cout:
                 x = x2
-                y[0] = y1
+                y[0] = y0
                 z = z2
-                cout = const_cost(x, y, z, I)
+                cout = cout2
     return (x, y, z, I)
 
 
