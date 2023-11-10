@@ -8,6 +8,35 @@ def dist(s, t):
     return sqrt((s[0] - t[0]) ** 2 + (s[1] - t[1]) ** 2)
 
 
+def choix_ss_in_line(t_pos, line_ss):
+    """
+    Cette fonction choisit la sous station à laquelle on va relier la ligne de turbine dans la ligne de ss donnée.
+    L'heuristique actuelle est de prendre la dernière ss de la ligne.
+    """
+    return line_ss[-1]
+
+
+def choix_ss(t_pos, V_s):
+    """
+    Cette fonction choisit la sous station à laquelle on va relier la ligne de turbine.
+    L'heuristique actuelle est de prendre la dernière ss de la ligne la plus proche de la turbine.
+    """
+    mini = 100000
+    s2 = V_s[0][-1]
+    # Choix de la ligne
+    for line_ss in V_s:
+        # Choix de la sous station dans la ligne
+        s3 = choix_ss_in_line(t_pos, line_ss)
+        d = dist(t_pos, next(iter(s3.values())))
+        if d < mini:
+            mini = d
+            s2 = s3
+    return next(iter(s2.keys()))
+
+
+# def choix_type_ss(id_ss, liste_id_t)
+
+
 def solution_naive2(I2):
     """
     Cette solution consiste à mettre toutes les turbines d'une même ligne sur une même sous station la plus proche.
@@ -27,26 +56,22 @@ def solution_naive2(I2):
 
     ss_visitees = []
 
+    # remplacer par un dictionnaire avec la sous station et la liste des turbines reliées à cette sous station
+
     # on peut optimiser sur le type de station choisi par défault
     type_ss = 1
     type_cable = 1
 
     # relier toutes les turbine d'une même ligne à la sous station correspondante
     z = defaultdict(int)
-    for l in V_t:
-        # trouver la sous station la plus proche
-        mini = 100000
-        t = l[0]
-        s = V_s[0][-1]
-        for ls in V_s:
-            s2 = ls[-1]
-            d = dist(next(iter(s2.values())), next(iter(t.values())))
-            if d < mini:
-                mini = d
-                s = s2
-        ss_visitees.append(next(iter(s.keys())))
-        for t in l:
-            z[(next(iter(s.keys())), next(iter(t.keys())))] = 1
+    for line in V_t:
+        # Choix de la sous station référente de la ligne
+        id_ss = choix_ss(next(iter(line[0].values())), V_s)
+
+        # relier les turbines de la ligne à la sous station
+        ss_visitees.append(id_ss)
+        for t in line:
+            z[(id_ss, next(iter(t.keys())))] = 1
 
     # construire chaque sous station visistée avec le type 1 et les relier à la terre
     x = defaultdict(int)

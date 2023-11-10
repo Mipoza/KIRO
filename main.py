@@ -47,9 +47,9 @@ def main():
     x, y, z, I2 = solution_naive2(I2)
     tac = time.time()
     print("tic-tac= ", tac - tic, " s")
-    print("cout tot pour solution_naive2= ", total_cost(x, y, z, I2))
     draw_solution(x, y, z, I)
     save_sol(x, y, z, name + "-naive2")
+    print("cout tot pour solution_naive2= ", total_cost(x, y, z, I))
 
     # tic = time.time()
     # x2, y2, z2, I = improve_nbr_ss(x, y, z, I)
