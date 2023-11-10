@@ -13,6 +13,13 @@ def solution_naive2(I2):
     Cette solution consiste à mettre toutes les turbines d'une même ligne sur une même sous station la plus proche.
 
     I2 est l'instance obtenue avec la fonction parse_instance2 du fichier parser.py
+
+    Piste d'amélioration:
+    - optimiser sur le type de station choisi par défault
+    - optimiser sur le type de cable choisi par défault
+    - choix de la ss référente de la ligne
+    - relier les sous stations entre elles
+    - optimiser sur le type de cable choisi pour relier les sous stations entre elles
     """
 
     V_s = I2[3]

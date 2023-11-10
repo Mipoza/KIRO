@@ -2,6 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import geopandas as gpd  # For maps
+import json
 
 
 data = [
@@ -117,3 +118,36 @@ def draw_solution(x, y, z, I):
 
     # Display the plot
     plt.show()
+
+
+# def load_sol(file_path):
+#     with open(file_path, "r") as json_file:
+#         data = json.load(json_file)
+
+#     # Initialiser les structures de données
+#     x = {}
+#     y = [[], []]
+#     z = {}
+
+#     # Remplir les structures de données à partir du contenu du fichier JSON
+#     for substation in data.get("substations", []):
+#         substation_id = substation["id"]
+#         substation_type = substation["substation_type"]
+#         x[(substation_id, substation_type)] = 1
+
+#     for cable in data.get("substation_substation_cables", []):
+#         substation_id = cable["substation_id"]
+#         other_substation_id = cable["other_substation_id"]
+#         cable_type = cable["cable_type"]
+#         y[1].append((substation_id, other_substation_id, 0, cable_type))
+
+#     for turbine in data.get("turbines", []):
+#         substation_id = turbine["substation_id"]
+#         turbine_id = turbine["id"]
+#         z[(substation_id, turbine_id)] = 1
+
+#     return x, y, z
+
+# # Exemple d'utilisation
+# file_path = "solutions/votre_solution.json"
+# x, y, z = load_sol(file_path)
