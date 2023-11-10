@@ -13,20 +13,45 @@ def choix_ss_in_line(t_pos, line_ss):
     Cette fonction choisit la sous station à laquelle on va relier la ligne de turbine dans la ligne de ss donnée.
     L'heuristique actuelle est de prendre la dernière ss de la ligne.
     """
-    return line_ss[-1]
+    x = 0
+    ss0 = line_ss[0]
+    for ss in line_ss:
+        pos_ss = next(iter(ss.values()))
+        if pos_ss[0] > x:
+            x = pos_ss[0]
+            ss0 = ss
+    # return line_ss[-1]
+    return ss0
+
+
+def choix_ss_in_line2(t_pos, line_ss):
+    """
+    Cette fonction choisit la sous station à laquelle on va relier la ligne de turbine dans la ligne de ss donnée.
+    L'heuristique actuelle est de prendre la première ss de la ligne.
+    """
+    x = 1000
+    ss0 = line_ss[0]
+    for ss in line_ss:
+        pos_ss = next(iter(ss.values()))
+        if pos_ss[0] < x:
+            x = pos_ss[0]
+            ss0 = ss
+    return ss0
 
 
 def choix_ss(t_pos, V_s):
     """
     Cette fonction choisit la sous station à laquelle on va relier la ligne de turbine.
     L'heuristique actuelle est de prendre la dernière ss de la ligne la plus proche de la turbine.
+
+    t_pos est la position de la turbine de la ligne
     """
     mini = 100000
     s2 = V_s[0][-1]
     # Choix de la ligne
     for line_ss in V_s:
         # Choix de la sous station dans la ligne
-        s3 = choix_ss_in_line(t_pos, line_ss)
+        s3 = choix_ss_in_line2(t_pos, line_ss)
         d = dist(t_pos, next(iter(s3.values())))
         if d < mini:
             mini = d

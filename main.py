@@ -17,13 +17,13 @@ def main():
     """
     Scores pour naive, nbr_ss, naive2:
     -> toy.json = (303, 303, 306)
-    -> small.json = (238 308, 5137, 7 270)
-    -> medium.json  = ( 2 872 282, ? , 524 330)
-    -> large.json = (  3 541 061, ?, 784 861)
-    -> huge.json = ( 3 477 701, ?, 23 298)
+    -> small.json = (238 308, 5137, 7 194)
+    -> medium.json  = ( 2 872 282, ? , 524 282)
+    -> large.json = (  3 541 061, ?, 782 464)
+    -> huge.json = ( 3 477 701, ?, 20 001)
 
     """
-    file = "small.json"
+    file = "huge.json"
     instance = parse_instance(file)
 
     # draw_data(instance)
@@ -35,21 +35,22 @@ def main():
     I = parse_instance(file)
     I2 = parse_instance2(file)
 
-    tic = time.time()
-    x, y, z, I = solution_naive(instance)
-    tac = time.time()
-    print("tic-tac= ", tac - tic, " s")
-    print("cout tot pour solution_naive= ", total_cost(x, y, z, I))
-    draw_solution(x, y, z, I)
-    save_sol(x, y, z, name + "-naive")
+    # tic = time.time()
+    # x, y, z, I = solution_naive(instance)
+    # tac = time.time()
+    # print("tic-tac= ", tac - tic, " s")
+    # print("cout tot pour solution_naive= ", total_cost(x, y, z, I))
+    # draw_solution(x, y, z, I)
+    # save_sol(x, y, z, name + "-naive")
 
     tic = time.time()
     x, y, z, I2 = solution_naive2(I2)
     tac = time.time()
     print("tic-tac= ", tac - tic, " s")
+    cout = total_cost(x, y, z, I)
+    print("cout tot pour solution_naive2= ", cout)
     draw_solution(x, y, z, I)
-    save_sol(x, y, z, name + "-naive2")
-    print("cout tot pour solution_naive2= ", total_cost(x, y, z, I))
+    save_sol(x, y, z, name + "-naive2-2")
 
     # tic = time.time()
     # x2, y2, z2, I = improve_nbr_ss(x, y, z, I)
