@@ -59,7 +59,19 @@ def choix_ss(t_pos, V_s):
     return next(iter(s2.keys()))
 
 
-# def choix_type_ss(id_ss, liste_id_t)
+def choix_type_ss(S):
+    """
+    Cette fonction choisit le type de sous station à laquelle on va relier la ligne de turbine.
+    L'heuristique actuelle est de prendre le risque de failure le plus grand et de cout minimal.
+    C'est actuellement indépendant de la ss ou du nombre de lignes de turbines reliées à la ss.
+    """
+    maxi = 0
+    type_ss = 1
+    for j in S.keys():
+        if S[j][1] > maxi:
+            maxi = S[j][1]
+            type_ss = j
+    return type_ss
 
 
 def solution_naive2(I2):
@@ -78,14 +90,11 @@ def solution_naive2(I2):
 
     V_s = I2[3]
     V_t = I2[2]
+    S = I2[1]
 
     ss_visitees = []
 
     # remplacer par un dictionnaire avec la sous station et la liste des turbines reliées à cette sous station
-
-    # on peut optimiser sur le type de station choisi par défault
-    type_ss = 1
-    type_cable = 1
 
     # relier toutes les turbine d'une même ligne à la sous station correspondante
     z = defaultdict(int)
@@ -101,6 +110,8 @@ def solution_naive2(I2):
     # construire chaque sous station visistée avec le type 1 et les relier à la terre
     x = defaultdict(int)
     y = [[], []]
+    type_ss = choix_type_ss(S)
+    type_cable = 1
     for s in ss_visitees:
         x[(s, type_ss)] = 1
         y[0].append((s, type_cable))

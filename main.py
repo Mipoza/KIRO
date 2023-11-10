@@ -1,5 +1,5 @@
 from parser import parse_instance, parse_instance2
-from map import draw_data, draw_solution
+from display import display_data, display_solution, display_type_ss
 from cost import total_cost
 from solution import (
     solution_naive,
@@ -17,16 +17,16 @@ def main():
     """
     Scores pour naive, nbr_ss, naive2:
     -> toy.json = (303, 303, 306)
-    -> small.json = (238 308, 5137, 7 194)
-    -> medium.json  = ( 2 872 282, ? , 524 282)
-    -> large.json = (  3 541 061, ?, 782 464)
-    -> huge.json = ( 3 477 701, ?, 20 001)
+    -> small.json = (238 308, 5137, 6 398) #type 16 (max failure, min cost)
+    -> medium.json  = ( 2 872 282, ? , 520 931) # type 19
+    -> large.json = (  3 541 061, ?, 773 934) # type 19
+    -> huge.json = ( 3 477 701, ?, 19 539) # type 22
 
     """
     file = "huge.json"
     instance = parse_instance(file)
 
-    # draw_data(instance)
+    # display_data(instance)
 
     # print(total_cost(*solution_naive(instance)[:-1], instance))
 
@@ -40,7 +40,7 @@ def main():
     # tac = time.time()
     # print("tic-tac= ", tac - tic, " s")
     # print("cout tot pour solution_naive= ", total_cost(x, y, z, I))
-    # draw_solution(x, y, z, I)
+    # display_solution(x, y, z, I)
     # save_sol(x, y, z, name + "-naive")
 
     tic = time.time()
@@ -49,21 +49,10 @@ def main():
     print("tic-tac= ", tac - tic, " s")
     cout = total_cost(x, y, z, I)
     print("cout tot pour solution_naive2= ", cout)
-    draw_solution(x, y, z, I)
+    # display_solution(x, y, z, I)
     save_sol(x, y, z, name + "-naive2-2")
 
-    # tic = time.time()
-    # x2, y2, z2, I = improve_nbr_ss(x, y, z, I)
-    # tac = time.time()
-    # print("tic-tac= ", tac - tic, " s")
-    # print("cout tot pour improve_nbr_ss= ", total_cost(x2, y2, z2, I))
-    # draw_solution(x2, y2, z2, I)
-    # save_sol(x2, y2, z2, name + "-nbr_ss")
-
-    # x3, y3, z3, I = improve_type_ss(x2,y2,z2,I)
-    # print(total_cost(x3,y3,z3,I))
-    # draw_solution(x3,y3,z3,I)
-    # save_sol(x3,y3,z3,I,3)
+    display_type_ss(I)
 
 
 main()

@@ -33,7 +33,7 @@ data = [
 ]
 
 
-def draw_data(data):
+def display_data(data):
     # wind turbines = red
     # substation = blue
     # cable = black
@@ -72,7 +72,7 @@ def draw_data(data):
 # draw_data(data)
 
 
-def draw_solution(x, y, z, I):
+def display_solution(x, y, z, I):
     V_t = I[2]
     V_s = I[3]
     S = I[1]
@@ -118,6 +118,32 @@ def draw_solution(x, y, z, I):
 
     # Display the plot
     plt.show()
+
+
+def display_type_ss(I):
+    S = I[1]
+    fig, ax = plt.subplots()
+
+    costs = [s[0] for s in S.values()]
+    failure = [s[1] for s in S.values()]
+    rating = [s[2] for s in S.values()]
+    id = [s for s in S.keys()]
+
+    # Sur chaque point, ajouter une étiquette avec son identifiant
+    for i, txt in enumerate(id):
+        ax.annotate(txt, (costs[i], failure[i]))
+    plt.scatter(costs, failure, c=rating, cmap="viridis")
+    plt.xlabel("Cost")
+    plt.ylabel("Failure probability")
+
+    # add legend for rating
+    plt.colorbar()
+
+    plt.show()
+
+
+def display_type_cable_land_ss(I):
+    pass
 
 
 # def load_sol(file_path):
