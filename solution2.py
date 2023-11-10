@@ -65,13 +65,27 @@ def choix_type_ss(S):
     L'heuristique actuelle est de prendre le risque de failure le plus grand et de cout minimal.
     C'est actuellement indépendant de la ss ou du nombre de lignes de turbines reliées à la ss.
     """
-    maxi = 0
-    type_ss = 1
-    for j in S.keys():
-        if S[j][1] > maxi:
-            maxi = S[j][1]
-            type_ss = j
+
+    # sub["id"]: [sub["cost"], sub["probability_of_failure"], sub["rating"]]
+    type_ss = list(S.keys())[-1]
+    mini = S[type_ss][0]
+
+    while type_ss > 1 and S[type_ss - 1][0] <= mini:
+        mini = S[type_ss - 1][0]
+        type_ss -= 1
     return type_ss
+
+
+def choix_type_cable_land_ss(Q_0):
+    """
+    On choisit min failure et min cout total
+    """
+    type_cable = list(Q_0.keys())[-1]
+    mini = Q_0[type_cable][0] + Q_0[type_cable][2]
+    while type_cable > 1 and Q_0[type_cable - 1][0] + Q_0[type_cable - 1][2] <= mini:
+        mini = Q_0[type_cable - 1][0] + Q_0[type_cable - 1][2]
+        type_cable -= 1
+    return type_cable
 
 
 def solution_naive2(I2):
@@ -91,6 +105,7 @@ def solution_naive2(I2):
     V_s = I2[3]
     V_t = I2[2]
     S = I2[1]
+    Q_0 = I2[4]
 
     ss_visitees = []
 
@@ -111,7 +126,9 @@ def solution_naive2(I2):
     x = defaultdict(int)
     y = [[], []]
     type_ss = choix_type_ss(S)
-    type_cable = 1
+    type_cable = choix_type_cable_land_ss(Q_0)
+    print("type_ss= ", type_ss)
+    print("type_cable= ", type_cable)
     for s in ss_visitees:
         x[(s, type_ss)] = 1
         y[0].append((s, type_cable))

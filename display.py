@@ -143,7 +143,30 @@ def display_type_ss(I):
 
 
 def display_type_cable_land_ss(I):
-    pass
+    Q_0 = I[4]
+    fig, ax = plt.subplots()
+    id = [q for q in Q_0.keys()]
+    fcosts = [q[0] for q in Q_0.values()]
+    rating = [q[1] for q in Q_0.values()]
+    failure = [q[2] for q in Q_0.values()]
+    vcosts = [q[3] for q in Q_0.values()]
+    tot_costs = [q[0] + q[3] for q in Q_0.values()]
+
+    # for i, txt in enumerate(id):
+    #     ax.annotate(txt, (vcosts[i], fcosts[i]))
+    # plt.scatter(vcosts, fcosts, c=rating, cmap="viridis")
+    # plt.xlabel("Variable cost")
+    # plt.ylabel("Variable cost")
+    # plt.colorbar()
+    # plt.show()
+
+    for i, txt in enumerate(id):
+        ax.annotate(txt, (tot_costs[i], failure[i]))
+    plt.scatter(tot_costs, failure, c=rating, cmap="viridis")
+    plt.xlabel("Total cost")
+    plt.ylabel("Failure probability")
+    plt.colorbar()
+    plt.show()
 
 
 # def load_sol(file_path):
