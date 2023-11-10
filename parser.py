@@ -6,17 +6,6 @@ from math import sqrt
 def parse_instance(file):
     """
     Parse the input file and return a list of parameters and data structures needed for the optimization problem.
-
-    :param file: The path to the input file.
-    :type file: str
-    :return: A list containing the following elements:
-        - A list of general parameters, including curtailing cost, curtailing penalty, fixed cost of cable, coordinates of the main land station, maximum curtailing, maximum power, and variable cost of cable.
-        - A dictionary of substation types, where each key is a substation ID and each value is a list containing the cost, probability of failure, and rating of the substation.
-        - A dictionary of wind turbines, where each key is a wind turbine ID and each value is a list containing the x and y coordinates of the wind turbine.
-        - A dictionary of substation locations, where each key is a substation ID and each value is a list containing the x and y coordinates of the substation.
-        - A dictionary of cable types for land substations, where each key is a cable type ID and each value is a list containing the fixed cost, probability of failure, rating, and variable cost of the cable.
-        - A dictionary of cable types for substation-substation connections, where each key is a cable type ID and each value is a list containing the fixed cost, rating, and variable cost of the cable.
-    :rtype: list
     """
     f = open("instances/" + file)
     data = json.load(f)
@@ -74,6 +63,46 @@ def parse_instance(file):
     return [[c_0, c_p, c_ft, v_0, c_max, p_max, c_lt], S, V_t, V_s, Q_0, Q_s, omega]
 
 
+def parse_instance2(file):
+    """
+    V_t is reformatted as a list of lists -> each sublist represents a line of turbines with the same y coordinate
+    V_s is reformatted as a list of lists -> each sublist represents a line of substations with the same y coordinate
+    """
+    I = parse_instance(file)
+
+    V_t = I[2]
+    V_s = I[3]
+
+    V_t2 = []
+    V_s2 = []
+
+    y = V_t[1][1]
+    l = []
+    for t, pos in V_t.items():
+        if pos[1] == y:
+            l.append({t: pos})
+        else:
+            V_t2.append(l)
+            l = []
+            y = pos[1]
+            l.append({t: pos})
+    V_t2.append(l)
+
+    y = V_s[1][1]
+    l = []
+    for s, pos in V_s.items():
+        if pos[1] == y:
+            l.append({s: pos})
+        else:
+            V_s2.append(l)
+            l = []
+            y = pos[1]
+            l.append({s: pos})
+    V_s2.append(l)
+
+    return [I[0], I[1], V_t2, V_s2, I[4], I[5], I[6]]
+
+
 def find_type(liste_de_couples, i_cherche):
     for i, k in liste_de_couples:
         if i == i_cherche:
@@ -125,3 +154,4 @@ def save_sol(x, y, z, I, name):
 
 
 # print(parse_instance("tiny.json"))
+# print(parse_instance2("tiny.json"))
