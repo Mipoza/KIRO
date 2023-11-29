@@ -65,6 +65,9 @@ def display_data(data):
     plt.xlim(-5, 85)
     plt.ylim(-10, 10)
 
+    # add legend ( in green: land station, in blue: substation, in red: wind turbine) and title
+    plt.title("Wind turbines and possible substations locations")
+
     # Display the plot
     plt.show()
 
@@ -116,6 +119,9 @@ def display_solution(x, y, z, I):
     plt.xlim(-5, 85)
     plt.ylim(-10, 10)
 
+    # add legend ( in green: land station, in blue: substation, in red: wind turbine, in black: cable) and title
+    plt.title("Solution: Wind turbines, substations, and cables")
+
     # Display the plot
     plt.show()
 
@@ -138,6 +144,9 @@ def display_type_ss(I):
 
     # add legend for rating
     plt.colorbar()
+
+    # add title
+    plt.title("Type of substations possible")
 
     plt.show()
 
@@ -165,6 +174,7 @@ def display_type_cable_land_ss(I):
     plt.scatter(tot_costs, failure, c=rating, cmap="viridis")
     plt.xlabel("Total cost")
     plt.ylabel("Failure probability")
+    plt.title("Type of cables possible")
     plt.colorbar()
     plt.show()
 
