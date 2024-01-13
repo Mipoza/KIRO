@@ -179,3 +179,35 @@ Compute the objective value of `solution` for given `instance`.
 function cost(solution::Solution, instance::Instance)
     return construction_cost(solution, instance) + operational_cost(solution, instance)
 end
+
+function Mfplus1(instance::Instance, scenario)
+    return max(scenario.power*length(instance.wind_turbines), length(instance.substation_substation_cable_types)*length(instance.substation_locations)^2)
+end
+
+function Mfl(instance::Instance)
+    return max(sum(x.rating for x in instance.substation_types), sum(x.rating for x in instance.land_substation_cable_types))
+end
+
+function Mnl(instance::Instance)
+    return max(sum(x.rating for x in instance.substation_types), sum(x.rating for x in instance.substation_substation_cable_types))
+end
+
+function Mnplusw(instance::Instance, scenario)
+    return max(Mnl(instance::Instance), length(instance.wind_turbines)*scenario.power)
+end
+
+function Mfplus2w(instance::Instance, scenario)
+    return max(scenario.power*length(instance.wind_turbines) + max(scenario.power*length(instance.wind_turbines),sum(x.rating for x in instance.substation_substation_cable_types)), Mfl(instance))
+end
+
+function Mnfw(instance::Instance, scenario)
+    return max(scenario.power*length(instance.wind_turbines), Mnl(instance))
+end
+
+function Mcfw(instance::Instance, scenario)
+    return instance.maximum_curtailing + Mfplus1(instance, scenario) + length(instance.substation_locations)*Mfplus2w(instance, scenario)
+end
+
+function Mcnw(instance::Instance, scenario)
+    return instance.maximum_curtailing + length(instance.substation_locations)*Mnplusw(instance, scenario)
+end
