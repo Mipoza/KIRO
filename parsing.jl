@@ -1,3 +1,5 @@
+using JSON
+
 """
     read_instance(path::String)
 
@@ -158,7 +160,7 @@ function write_solution(solution::Solution, path::String)
     end
     n = size(inter_station_cables, 1)
     for i in 1:n
-        for j in (i + 1):n
+        for j in (i+1):n
             if inter_station_cables[i, j] > 0
                 push!(
                     data["substation_substation_cables"],

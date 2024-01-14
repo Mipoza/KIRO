@@ -7,6 +7,9 @@ include("solution.jl")
 include("parsing.jl")
 include("eval.jl")
 
+
+# Checher que c'est le bon choix de type de cable et de ss
+
 function lines(wind_turbines::Vector{Location})
     """
     Cette fonction renvoie les lignes de turbines i.e y = constante
