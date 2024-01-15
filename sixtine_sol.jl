@@ -7,138 +7,143 @@ include("solution.jl")
 include("parsing.jl")
 include("eval.jl")
 
-function dist(s, t)
-    return sqrt((s[1] - t[1])^2 + (s[2] - t[2])^2)
-end
 
-function choix_ss_in_line(t_pos, line_ss)
+# Checher que c'est le bon choix de type de cable et de ss
+
+function lines(wind_turbines::Vector{Location})
     """
-    Cette fonction choisit la sous station à laquelle on va relier la ligne de turbine dans la ligne de ss donnée.
-    L'heuristique actuelle est de prendre la dernière ss de la ligne.
+    Cette fonction renvoie les lignes de turbines i.e y = constante
     """
-    x = 0
-    ss0 = line_ss[1]
-    for ss in line_ss
-        pos_ss = first(values(ss))
-        if pos_ss[1] > x
-            x = pos_ss[1]
-            ss0 = ss
+    turbines = sort(wind_turbines, by=x -> x.y)
+    lines = []
+    line = []
+    y = turbines[1].y
+    for turbine in turbines
+        if turbine.y == y
+            push!(line, turbine)
+        else
+            push!(lines, line)
+            line = [turbine]
+            y = turbine.y
         end
     end
-    return first(keys(ss0))
+    push!(lines, line)
+    return lines
 end
 
-function choix_ss_in_line2(t_pos, line_ss)
-    """
-    Cette fonction choisit la sous station à laquelle on va relier la ligne de turbine dans la ligne de ss donnée.
-    L'heuristique actuelle est de prendre la première ss de la ligne.
-    """
-    x = 1000
-    ss0 = line_ss[1]
-    for ss in line_ss
-        pos_ss = first(values(ss))
-        if pos_ss[1] < x
-            x = pos_ss[1]
-            ss0 = ss
-        end
+function order(v1::Vector{Any}, n::Int64)
+    #réordoner modulo n ie : 1, n+1, 2n +1 , ... , 2, n+2, 2n +2, ...
+    #order(lines(instance.wind_turbines),n_ligne_ss)
+    v2 = []
+    m = length(v1)
+    i = 1
+    while length(v2) != m
+        push!(v2, v1[i])
+        i = mod(i + n, 1:m)
     end
-    return first(keys(ss0))
+    return v2
+    # return v1
 end
 
-function choix_ss(t_pos, V_s)
+function choix_ss(turbine::Location, substation_locations::Vector{Location}, substation_used::Vector{Int})
     """
     Cette fonction choisit la sous station à laquelle on va relier la ligne de turbine.
-    L'heuristique actuelle est de prendre la dernière ss de la ligne la plus proche de la turbine.
+    L'heuristique actuelle est de prendre la ss la plus proche de la turbine.
 
-    t_pos est la position de la turbine de la ligne
+    substation_used permet de ne pas surcharger une sous station. (au plus n_max ligne de turbines par ss)
     """
+
+    n_max = 1
     mini = 100000
-    s2 = first(keys(V_s[1][end]))
-    for line_ss in V_s
-        s3 = choix_ss_in_line2(t_pos, line_ss)
-        d = dist(t_pos, first(values(s3)))
-        if d < mini
+    id_substation = substation_locations[end].id
+    for substation in substation_locations
+        d = distance(turbine, substation)
+        if d < mini && substation_used[substation.id] < n_max
             mini = d
-            s2 = first(keys(s3))
+            id_substation = substation.id
         end
     end
-    return s2
+    substation_used[id_substation] += 1
+    return id_substation, substation_used
 end
 
-function choix_type_ss(S)
+function choix_type_ss(substation_types::Vector{SubStationType})
     """
     Cette fonction choisit le type de sous station à laquelle on va relier la ligne de turbine.
     L'heuristique actuelle est de prendre le risque de failure le plus grand et de cout minimal.
     C'est actuellement indépendant de la ss ou du nombre de lignes de turbines reliées à la ss.
     """
-    type_ss = keys(S[end])[1]
-    mini = S[end][1]
 
-    while type_ss > 1 && S[type_ss - 1][1] <= mini
-        mini = S[type_ss - 1][1]
-        type_ss -= 1
+    id_type_ss = substation_types[end].id
+    mini = substation_types[end].probability_of_failure
+
+    while id_type_ss > 1 && substation_types[id_type_ss-1].probability_of_failure <= mini
+        mini = substation_types[id_type_ss-1].probability_of_failure
+        id_type_ss -= 1
     end
-    return type_ss
+    return id_type_ss
 end
 
-function choix_type_cable_land_ss(Q_0)
+function choix_type_cable_land_ss(land_substation_cable_types::Vector{CableType})
     """
     On choisit min failure et min cout total
     """
-    type_cable = keys(Q_0[end])[1]
-    mini = Q_0[end][1] + Q_0[end][3]
-    while type_cable > 1 && Q_0[type_cable - 1][1] + Q_0[type_cable - 1][3] <= mini
-        mini = Q_0[type_cable - 1][1] + Q_0[type_cable - 1][3]
-        type_cable -= 1
+
+    id_type_cable = land_substation_cable_types[end].id
+    mini = land_substation_cable_types[end].probability_of_failure + land_substation_cable_types[end].variable_cost
+    while id_type_cable > 1 && land_substation_cable_types[id_type_cable-1].probability_of_failure + land_substation_cable_types[id_type_cable-1].variable_cost <= mini
+        mini = land_substation_cable_types[id_type_cable-1].probability_of_failure + land_substation_cable_types[id_type_cable-1].variable_cost
+        id_type_cable -= 1
     end
-    return type_cable
+    return id_type_cable
 end
 
-function solution_naive2(I)
+function resolution_sixtine(instance::Instance)
     """
     Cette solution consiste à mettre toutes les turbines d'une même ligne sur une même sous station la plus proche.
 
-    I2 est l'instance obtenue avec la fonction parse_instance2 du fichier parser.py
+    parser selon lignes
 
     Piste d'amélioration:
-    - optimiser sur le type de station choisi par défault
-    - optimiser sur le type de cable choisi par défault
-    - choix de la ss référente de la ligne
-    - relier les sous stations entre elles
-    - optimiser sur le type de cable choisi pour relier les sous stations entre elles
+    - Limiter le nombre de turbine par station
+    - Attribuer intelligement les stations
     """
-    V_s = I.substation_locations
-    V_t = I.wind_turbines
-    S = I.substation_types
-    Q_0 = I.land_substation_cable_types
 
-    ss_visitees = []
 
-    z = Dict()
+    substations = []
+    inter_station_cables = zeros(Int, nb_station_locations(instance), nb_station_locations(instance))
+    turbine_links = zeros(nb_turbines(instance))
 
-    for line in V_t
-        id_ss = choix_ss(first(values(first(line))), V_s)
+    ss_visited = []
+    substation_used = zeros(Int, nb_station_locations(instance))
+    n_ligne_ss = length(lines(instance.substation_locations))
+    #Changer ordre parcours ligne_turbine
+    # ! Risque danger parsing
+    lines_turbines = order(lines(instance.wind_turbines), n_ligne_ss)
 
-        ss_visitees = [ss_visitees..., id_ss]
 
-        for t in line
-            z[(id_ss, first(keys(t)))] = 1
+    # On choisit un type de ss ( substation_types)
+    # On choisit un type de cable pour relier une station à la terre (land_substation_cable_types)
+    # pour chaque ligne de turbines
+    # --- on choisit une ss (la plus proche de la première turbine de la ligne)
+    # --- on ajoute la ss à la liste des ss visitées
+    # --- pour chaque turbine de la ligne de turbines
+    # --- --- On relie la turbine à la ss : turbine_links[turbine.id] = ss.id
+    # Pour chaque ss visitée
+    # --- On construit la ss : substations.append(Substation(id, substation_type, land_cable_type))
+    # Renvoyer la solution
+
+    type_ss = choix_type_ss(instance.substation_types)
+    type_cable = choix_type_cable_land_ss(instance.land_substation_cable_types)
+    for line_turbines in lines_turbines
+        id_substation, substation_used = choix_ss(first(line_turbines), instance.substation_locations, substation_used)
+        ss_visited = [ss_visited..., id_substation]
+        for turbine in line_turbines
+            turbine_links[turbine.id] = id_substation
         end
     end
-
-    x = Dict()
-    y = [[], []]
-
-    type_ss = choix_type_ss(S)
-    type_cable = choix_type_cable_land_ss(Q_0)
-
-    println("type_ss= ", type_ss)
-    println("type_cable= ", type_cable)
-
-    for s in ss_visitees
-        x[(s, type_ss)] = 1
-        push!(y[1], (s, type_cable))
+    for substation in ss_visited
+        push!(substations, SubStation(substation, type_ss, type_cable))
     end
-
-    return (x, y, z, I)
+    return Solution(; turbine_links, inter_station_cables, substations)
 end
