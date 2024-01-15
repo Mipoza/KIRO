@@ -12,14 +12,17 @@ include("sixtine_sol.jl")
 
 I = read_instance("instances/KIRO-tiny.json")
 
+#sol = read_solution("tsol.json")
+#println(cost(sol,I))
+
 model = Model(HiGHS.Optimizer)
 
 
 function c_positive_part(model, beta, mu, M)
-    y = @variable(model, binary = true) # On espere que chaque variable est différente pour chaque appel !!! 
+    y = @variable(model, binary = true) 
     @constraint(model,  0 <= y -beta/M <= 1)
     @constraint(model, mu - y*M <= 0)
-    @constraint(model, beta - M*(1-y) <= mu)
+    @constraint(model, beta - M*(1-y) - mu <= 0)
     @constraint(model, 0 <= beta + M*(1-y) - mu)
 end
 
@@ -165,6 +168,9 @@ end
 
 for t in 1:length(V_t)
     @constraint(model, sum(z[v,t] for v in 1:length(V_s)) == 1)
+    for v in 1:length(V_s)
+        @constraint(model, z[v,t] <= sum(x[v,s] for s in 1:length(S)))
+    end
 end
 
 for q in 1:length(Q_s)
@@ -183,22 +189,30 @@ end
 
 
 optimize!(model)
-print("AAAAAAAAAAAAAAAAAAA")
-print(objective_value(model))
+println("*** Values ***")
+println(string("Obj : "),objective_value(model))
+println(" x ")
 println(value(x[1,1]))
 println(value(x[1,2]))
 println(value(x[2,1]))
 println(value(x[2,2]))
-println("ddEEEE")
-for v in 1:length(V_s)
-    for q in 1:length(Q_0)
-        println(value(y_0[v,q]))
-    end
-end
-
+println(" z ")
 for v in 1:length(V_s)
     for t in 1:length(V_t)
-        println(value(z[v,t]))
+        println("v=",v,",t=",t," : ",value(z[v,t]))
     end
 end
-
+println(" y_0 ")
+for v in 1:length(V_s)
+    for q in 1:length(Q_0)
+        println("v=",v,",q=",q," : ",value(y_0[v,q]))
+    end
+end
+println(" y_s ")
+for v in 1:length(V_s)
+    for v_p in 1:length(V_s)
+        for q in 1:length(Q_s)
+            println("v=",v,",v'=",v_p,",q=",q," : ",value(y_s[v,v_p,q]))
+        end
+    end
+end
