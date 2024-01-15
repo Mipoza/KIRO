@@ -31,22 +31,26 @@ function lines(wind_turbines::Vector{Location})
     return lines
 end
 
-function choix_ss(turbine::Location, substation_locations::Vector{Location})
+function choix_ss(turbine::Location, substation_locations::Vector{Location}, substation_used::Vector{Int})
     """
     Cette fonction choisit la sous station à laquelle on va relier la ligne de turbine.
     L'heuristique actuelle est de prendre la ss la plus proche de la turbine.
+
+    substation_used permet de ne pas surcharger une sous station. (au plus n_max ligne de turbines par ss)
     """
 
+    n_max = 1
     mini = 100000
     id_substation = substation_locations[end].id
     for substation in substation_locations
         d = distance(turbine, substation)
-        if d < mini
+        if d < mini && substation_used[substation.id] < n_max
             mini = d
             id_substation = substation.id
         end
     end
-    return id_substation
+    substation_used[id_substation] += 1
+    return id_substation, substation_used
 end
 
 function choix_type_ss(substation_types::Vector{SubStationType})
@@ -99,6 +103,7 @@ function resolution_sixtine(instance::Instance)
     turbine_links = zeros(nb_turbines(instance))
 
     ss_visited = []
+    substation_used = zeros(Int, nb_station_locations(instance))
     lines_turbines = lines(instance.wind_turbines)
 
     # On choisit un type de ss ( substation_types)
@@ -115,7 +120,7 @@ function resolution_sixtine(instance::Instance)
     type_ss = choix_type_ss(instance.substation_types)
     type_cable = choix_type_cable_land_ss(instance.land_substation_cable_types)
     for line_turbines in lines_turbines
-        id_substation = choix_ss(first(line_turbines), instance.substation_locations)
+        id_substation, substation_used = choix_ss(first(line_turbines), instance.substation_locations, substation_used)
         ss_visited = [ss_visited..., id_substation]
         for turbine in line_turbines
             turbine_links[turbine.id] = id_substation

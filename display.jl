@@ -8,12 +8,6 @@ include("sixtine_sol.jl")
 using Plots
 gr()
 
-txt = "KIRO-huge"
-I = read_instance("instances/" * txt * ".json")
-# sol::Solution = resolution_sixtine(I)
-# write_solution(sol, "solutions/" * txt * ".json")
-solution = read_solution("solutions/" * txt * ".json", I)
-
 ms2 = 2
 
 
@@ -95,6 +89,7 @@ function display_solution(solution::Solution, instance::Instance)
     # plot!([-5, 85], [-10, 10], legend=false)
 
     # Display the plot
+    title!("Cost: " * string(cost(solution, instance)))
     display(plot!())
 end
 
@@ -136,9 +131,26 @@ function display_type_cable_land_ss(I::Instance)
 end
 
 
-# Exemple d'utilisation
+
+
+# ------------- Exemple d'utilisation -------------
+
+
+txt = "KIRO-huge"
+I = read_instance("instances/" * txt * ".json")
+sol::Solution = resolution_sixtine(I)
+write_solution(sol, "solutions/" * txt * "2.json")
+# solution = read_solution("solutions/" * txt * ".json", I)
+solution2 = read_solution("solutions/" * txt * "2.json", I)
+
+
 # display_instance(I)
-display_solution(solution, I)
+# display_solution(solution, I)
+display_solution(solution2, I)
+
+# print(cost(solution, I))
+# print(cost(solution2, I))
+
 # display_type_ss(I)
 # display_type_cable_land_ss(I)
 
