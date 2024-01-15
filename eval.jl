@@ -181,7 +181,7 @@ function cost(solution::Solution, instance::Instance)
 end
 
 function Mfplus1(instance::Instance, scenario)
-    return max(scenario.power*length(instance.wind_turbines), length(instance.substation_substation_cable_types)*length(instance.substation_locations)^2)
+    return max(scenario.power_generation*length(instance.wind_turbines), length(instance.substation_substation_cable_types)*length(instance.substation_locations)^2)
 end
 
 function Mfl(instance::Instance)
@@ -193,16 +193,21 @@ function Mnl(instance::Instance)
 end
 
 function Mnplusw(instance::Instance, scenario)
-    return max(Mnl(instance::Instance), length(instance.wind_turbines)*scenario.power)
+    return max(Mnl(instance::Instance), length(instance.wind_turbines)*scenario.power_generation)
 end
 
 function Mfplus2w(instance::Instance, scenario)
-    return max(scenario.power*length(instance.wind_turbines) + max(scenario.power*length(instance.wind_turbines),sum(x.rating for x in instance.substation_substation_cable_types)), Mfl(instance))
+    return max(scenario.power_generation*length(instance.wind_turbines) + max(scenario.power_generation*length(instance.wind_turbines),sum(x.rating for x in instance.substation_substation_cable_types)), Mfl(instance))
 end
 
 function Mnfw(instance::Instance, scenario)
-    return max(scenario.power*length(instance.wind_turbines), Mnl(instance))
+    return max(scenario.power_generation*length(instance.wind_turbines), Mnl(instance))
 end
+
+function Mfp(instance::Instance, scenario)
+    return max(scenario.power_generation*length(instance.wind_turbines), sum(x.rating for x in instance.substation_substation_cable_types))
+end
+
 
 function Mcfw(instance::Instance, scenario)
     return instance.maximum_curtailing + Mfplus1(instance, scenario) + length(instance.substation_locations)*Mfplus2w(instance, scenario)

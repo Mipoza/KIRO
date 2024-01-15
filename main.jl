@@ -10,9 +10,34 @@ include("eval.jl")
 include("sixtine_sol.jl")
 
 
-I = read_instance("instances/KIRO-small.json")
+I = read_instance("instances/KIRO-tiny.json")
 
 model = Model(HiGHS.Optimizer)
+
+
+function c_positive_part(model, beta, mu, M)
+    y = @variable(model, binary = true) # On espere que chaque variable est différente pour chaque appel !!! 
+    @constraint(model,  0 <= y -beta/M <= 1)
+    @constraint(model, mu - y*M <= 0)
+    @constraint(model, beta - M*(1-y) <= mu)
+    @constraint(model, 0 <= beta + M*(1-y) - mu)
+end
+
+function c_min(model, alpha, beta, mu, M)
+    y = @variable(model, binary = true)
+    @constraint(model, mu <= alpha)
+    @constraint(model, mu <= beta)
+    @constraint(model, alpha - beta + 2*M*(1-y) >= 0)
+    @constraint(model, alpha - beta - 2*M*y <= 0)
+    @constraint(model, 0 >= alpha - 2*M*y - mu)
+    @constraint(model, 0 >= beta - 2*M*(1-y) - mu)
+end 
+
+function c_prod(model, alpha, beta, mu, M)
+    @constraint(model, mu - alpha*M <= 0)
+    @constraint(model, beta - M*(1-alpha) -mu <= 0)
+    @constraint(model, mu - beta <= 0 )
+end
 
 V_s = I.substation_locations
 S = I.substation_types
@@ -22,6 +47,7 @@ Q_s = I.substation_substation_cable_types
 Omega = I.wind_scenarios
 c_0 = I.curtailing_cost
 c_p = I.curtailing_penalty
+c_max = I.maximum_curtailing
 
 @variable(model, x[1:length(V_s), 1:length(S)], Bin)
 @variable(model, y_0[1:length(V_s), 1:length(Q_0)], Bin)
@@ -31,9 +57,9 @@ c_p = I.curtailing_penalty
 @variable(model, ln[1:length(V_s)] >= 0)
 @variable(model, cnp[1:length(V_s), 1:length(Omega)] >= 0)
 @variable(model, cfp1[1:length(V_s), 1:length(Omega)] >= 0)
-@variable(model, pf[1:length(V_s), 1:(length(V_s)-1), 1:length(Omega)] >= 0)
-@variable(model, lfv[1:length(V_s), 1:(length(V_s)-1)] >= 0)
-@variable(model, cfp2[1:length(V_s), 1:(length(V_s)-1), 1:length(Omega)] >= 0)
+@variable(model, pf[1:length(V_s), 1:(length(V_s)), 1:length(Omega)] >= 0)
+@variable(model, lfv[1:length(V_s), 1:(length(V_s))] >= 0)
+@variable(model, cfp2[1:length(V_s), 1:(length(V_s)), 1:length(Omega)] >= 0)
 @variable(model, cfmax[1:length(V_s), 1:length(Omega)] >= 0)
 @variable(model, cnmax[1:length(Omega)] >= 0)
 
@@ -81,4 +107,98 @@ end
 
 @objective(model, Min, cc1 + cc2 + cc3 + cc4 + sum( Omega[w].probability*(cf_sumv(w)+ sum(c_0*cnp[i,w] for i in 1:length(V_s)) + c_p*cnmax[w]) for w in 1:length(Omega))) #no problem avec les id scenario et w
 
-#CELA EST TERRIFIANT 
+#Contraintes
+
+for v in 1:length(V_s)
+    c_min(model, sum(S[j].rating*x[v,j] for j in 1:length(S)), sum(Q_0[j].rating*y_0[v,j] for j in 1:length(Q_0)), ln[v], Mnl(I))
+
+    for v_b in 1:length(V_s)
+        if v_b != v
+            c_min(model, sum(S[s].rating*x[v_b,s] for s in 1:length(S)), sum(Q_0[q].rating*y_0[v_b,q] for q in 1:length(Q_0)), lfv[v,v_b], Mfl(I))
+        else
+            @constraint(model, lfv[v,v_b] == 0)
+        end
+    end
+
+    for w in 1:length(Omega)
+        c_positive_part(model, Omega[w].power_generation*sum(z[v,t] for t in 1:length(V_t))-ln[v], cnp[v,w], Mnplusw(I, Omega[w]))
+        c_positive_part(model, Omega[w].power_generation*sum(z[v,t] for t in 1:length(V_t))-sum(Q_s[q].rating*y_s[v,v_b,q] for v_b in 1:length(V_s), q in 1:length(Q_s)), cfp1[v,w], Mfplus1(I, Omega[w]))
+        for v_b in 1:length(V_s)
+            if v_b != v
+                c_min(model, sum(Q_s[q].rating*y_s[v,v_b,q] for q in 1:length(Q_s)), Omega[w].power_generation*sum(z[v,t] for t in 1:length(V_t)), pf[v,v_b,w], Mfp(I, Omega[w]))
+                c_positive_part(model, Omega[w].power_generation*sum(z[v_b,t] for t in 1:length(V_t)) + pf[v,v_b,w] - lfv[v,v_b] , cfp2[v,v_b,w], Mfplus2w(I, Omega[w]))
+            else
+                @constraint(model, pf[v,v_b,w] == 0)
+                @constraint(model, cfp2[v,v_b,w] == 0)
+            end
+        end
+        c_positive_part(model, cfp1[v,w] + sum(cfp2[v,v_b,w] for v_b in 1:length(V_s)) - c_max , cfmax[v,w], Mcfw(I, Omega[w]))
+
+        for s in 1:length(S)
+            c_prod(model, x[v,s], cfp1[v,w], muxf1[s,v,w], Mfplus1(I, Omega[w]))
+            c_prod(model, x[v,s], sum(cfp2[v,v_b,w] for v_b in 1:length(V_s)), muxf2[s,v,w], length(V_s)*Mfplus2w(I, Omega[w]))
+            c_prod(model, x[v,s], cfmax[v,w], muxfmax[s,v,w], Mcfw(I, Omega[w]))
+            c_prod(model, x[v,s], sum(cnp[v_b,w] for v_b in 1:length(V_s)), muxn[s,v,w], length(V_s)*Mnplusw(I, Omega[w]))
+            c_prod(model, x[v,s], cnmax[w], muxnmax[s,v,w], Mcnw(I, Omega[w]))
+        end
+
+        for q in 1:length(Q_0)
+            c_prod(model, y_0[v,q], cfp1[v,w], muyf1[q,v,w], Mfplus1(I, Omega[w]))
+            c_prod(model, y_0[v,q], sum(cfp2[v,v_b,w] for v_b in 1:length(V_s)), muyf2[q,v,w], length(V_s)*Mfplus2w(I, Omega[w]))
+            c_prod(model, y_0[v,q], cfmax[v,w], muyfmax[q,v,w], Mcfw(I, Omega[w]))
+            c_prod(model, y_0[v,q], sum(cnp[v_b,w] for v_b in 1:length(V_s)), muyn[q,v,w], length(V_s)*Mnplusw(I, Omega[w]))
+            c_prod(model, y_0[v,q], cnmax[w], muynmax[q,v,w], Mcnw(I, Omega[w]))
+        end
+    end
+
+end
+
+for w in 1:length(Omega)
+    c_positive_part(model, sum(cnp[v,w] for v in 1:length(V_s)) - c_max, cnmax[w], Mcnw(I, Omega[w]))
+end
+
+for v in 1:length(V_s)
+    @constraint(model, sum(x[v,s] for s in 1:length(S)) <= 1)
+    @constraint(model, sum(y_0[v,q] for q in 1:length(Q_0))-sum(x[v,s] for s in 1:length(S)) == 0)
+    @constraint(model, sum(y_s[v,v_p,q] for q in 1:length(Q_s), v_p in 1:length(V_s)) - sum(x[v,s] for s in 1:length(S)) <=0 )
+end
+
+for t in 1:length(V_t)
+    @constraint(model, sum(z[v,t] for v in 1:length(V_s)) == 1)
+end
+
+for q in 1:length(Q_s)
+    for v in 1:length(V_s)
+        for v_p in 1:length(V_s)
+            if v != v_p
+                @constraint(model, y_s[v,v_p,q]- y_s[v_p,v,q]==0)
+            else
+                @constraint(model, y_s[v,v,q] == 0)
+            end
+            
+        end
+    end
+end
+
+
+
+optimize!(model)
+print("AAAAAAAAAAAAAAAAAAA")
+print(objective_value(model))
+println(value(x[1,1]))
+println(value(x[1,2]))
+println(value(x[2,1]))
+println(value(x[2,2]))
+println("ddEEEE")
+for v in 1:length(V_s)
+    for q in 1:length(Q_0)
+        println(value(y_0[v,q]))
+    end
+end
+
+for v in 1:length(V_s)
+    for t in 1:length(V_t)
+        println(value(z[v,t]))
+    end
+end
+
