@@ -10,9 +10,12 @@ gr()
 
 txt = "KIRO-huge"
 I = read_instance("instances/" * txt * ".json")
-sol::Solution = resolution_sixtine(I)
-write_solution(sol, "solutions/" * txt * ".json")
+# sol::Solution = resolution_sixtine(I)
+# write_solution(sol, "solutions/" * txt * ".json")
 solution = read_solution("solutions/" * txt * ".json", I)
+
+ms2 = 2
+
 
 function display_instance(instance::Instance)
     V_t = instance.wind_turbines
@@ -22,7 +25,6 @@ function display_instance(instance::Instance)
     plot()
 
     r = 0.02
-    ms2 = 2
 
     # Draw a red filled circle for each wind turbine
     for (id, turbine) in pairs(V_t)
@@ -47,13 +49,9 @@ function display_instance(instance::Instance)
     display(plot!())
 end
 
-# Exemple d'utilisation
-display_instance(I)
-
 function display_solution(solution::Solution, instance::Instance)
     V_t = instance.wind_turbines
     V_s = instance.substation_locations
-    ms2 = 2
 
     plot()
 
@@ -101,93 +99,46 @@ function display_solution(solution::Solution, instance::Instance)
 end
 
 
+function display_type_ss(I::Instance)
+    plot()
+
+    for s in values(I.substation_types)
+        plot!([s.cost], [s.probability_of_failure], st=:scatter, ms=ms2, m=:circle, color="blue")
+        annotate!(s.cost, s.probability_of_failure, text(s.id, :bottom, 8, :blue))
+    end
+
+    xlabel!("Cost")
+    ylabel!("Failure probability")
+    title!("Type of substations possible")
+
+    display(plot!())
+end
+
+
+function display_type_cable_land_ss(I::Instance)
+    plot()
+
+    # tot_costs = [q.variable_cost + q.fixed_cost for q in values(Q_0)]
+    # failure = [q.probability_of_failure for q in values(Q_0)]
+    # rating = [q.rating for q in values(Q_0)]
+
+    for q in values(I.land_substation_cable_types)
+        plot!([q.variable_cost + q.fixed_cost], [q.probability_of_failure], st=:scatter, ms=ms2, m=:circle, color="green")
+        annotate!(q.variable_cost + q.fixed_cost, q.probability_of_failure, text(q.id, :bottom, 8))
+    end
+
+    # scatter!(tot_costs, failure, c=rating, cmap="viridis")
+    xlabel!("Total cost")
+    ylabel!("Failure probability")
+    title!("Type of cables possible (land -> substation))")
+
+    display(plot!())
+end
+
+
 # Exemple d'utilisation
+# display_instance(I)
 display_solution(solution, I)
+# display_type_ss(I)
+# display_type_cable_land_ss(I)
 
-
-
-
-# def display_type_ss(I):
-#     S = I[1]
-#     fig, ax = plt.subplots()
-
-#     costs = [s[0] for s in S.values()]
-#     failure = [s[1] for s in S.values()]
-#     rating = [s[2] for s in S.values()]
-#     id = [s for s in S.keys()]
-
-#     # Sur chaque point, ajouter une étiquette avec son identifiant
-#     for i, txt in enumerate(id):
-#         ax.annotate(txt, (costs[i], failure[i]))
-#     plt.scatter(costs, failure, c=rating, cmap="viridis")
-#     plt.xlabel("Cost")
-#     plt.ylabel("Failure probability")
-
-#     # add legend for rating
-#     plt.colorbar()
-
-#     # add title
-#     plt.title("Type of substations possible")
-
-#     plt.show()
-
-
-# def display_type_cable_land_ss(I):
-#     Q_0 = I[4]
-#     fig, ax = plt.subplots()
-#     id = [q for q in Q_0.keys()]
-#     fcosts = [q[0] for q in Q_0.values()]
-#     rating = [q[1] for q in Q_0.values()]
-#     failure = [q[2] for q in Q_0.values()]
-#     vcosts = [q[3] for q in Q_0.values()]
-#     tot_costs = [q[0] + q[3] for q in Q_0.values()]
-
-#     # for i, txt in enumerate(id):
-#     #     ax.annotate(txt, (vcosts[i], fcosts[i]))
-#     # plt.scatter(vcosts, fcosts, c=rating, cmap="viridis")
-#     # plt.xlabel("Variable cost")
-#     # plt.ylabel("Variable cost")
-#     # plt.colorbar()
-#     # plt.show()
-
-#     for i, txt in enumerate(id):
-#         ax.annotate(txt, (tot_costs[i], failure[i]))
-#     plt.scatter(tot_costs, failure, c=rating, cmap="viridis")
-#     plt.xlabel("Total cost")
-#     plt.ylabel("Failure probability")
-#     plt.title("Type of cables possible")
-#     plt.colorbar()
-#     plt.show()
-
-
-# # def load_sol(file_path):
-# #     with open(file_path, "r") as json_file:
-# #         data = json.load(json_file)
-
-# #     # Initialiser les structures de données
-# #     x = {}
-# #     y = [[], []]
-# #     z = {}
-
-# #     # Remplir les structures de données à partir du contenu du fichier JSON
-# #     for substation in data.get("substations", []):
-# #         substation_id = substation["id"]
-# #         substation_type = substation["substation_type"]
-# #         x[(substation_id, substation_type)] = 1
-
-# #     for cable in data.get("substation_substation_cables", []):
-# #         substation_id = cable["substation_id"]
-# #         other_substation_id = cable["other_substation_id"]
-# #         cable_type = cable["cable_type"]
-# #         y[1].append((substation_id, other_substation_id, 0, cable_type))
-
-# #     for turbine in data.get("turbines", []):
-# #         substation_id = turbine["substation_id"]
-# #         turbine_id = turbine["id"]
-# #         z[(substation_id, turbine_id)] = 1
-
-# #     return x, y, z
-
-# # # Exemple d'utilisation
-# # file_path = "solutions/votre_solution.json"
-# # x, y, z = load_sol(file_path)
