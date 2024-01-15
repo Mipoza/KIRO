@@ -79,4 +79,6 @@ function cf_sumv(w)
     return sum(cf_wv(w, v) for v in 1:length(V_s))
 end
 
-@objective(model, Min, cc1 + cc2 + cc3 + cc4 + sum(Omega[w].probability * (cf_sumv(w) + sum(c_0 * cnp[i, w] for i in 1:length(V_s)) + c_p * cnmax[w]) for w in 1:length(Omega))) #no problem avec les id
+@objective(model, Min, cc1 + cc2 + cc3 + cc4 + sum( Omega[w].probability*(cf_sumv(w)+ sum(c_0*cnp[i,w] for i in 1:length(V_s)) + c_p*cnmax[w]) for w in 1:length(Omega))) #no problem avec les id scenario et w
+
+#CELA EST TERRIFIANT 
