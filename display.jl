@@ -43,6 +43,18 @@ function display_instance(instance::Instance)
     display(plot!())
 end
 
+function display_instance_turbines(instance::Instance)
+    V_t = instance.wind_turbines
+    plot()
+    r = 0.02
+    for (id, turbine) in pairs(V_t)
+        plot!([turbine.x], [turbine.y], st=:scatter, ms=ms2, m=:circle, color="red")
+        annotate!(turbine.x, turbine.y, text(string(id), :bottom, 8, :red))
+    end
+    display(plot!())
+end
+
+
 function display_solution(solution::Solution, instance::Instance)
     V_t = instance.wind_turbines
     V_s = instance.substation_locations
@@ -145,6 +157,7 @@ solution2 = read_solution("solutions/" * txt * "2.json", I)
 
 
 # display_instance(I)
+# display_instance_turbines(I)
 # display_solution(solution, I)
 display_solution(solution2, I)
 
