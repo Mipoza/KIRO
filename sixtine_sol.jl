@@ -31,6 +31,20 @@ function lines(wind_turbines::Vector{Location})
     return lines
 end
 
+function order(v1::Vector{Any}, n::Int64)
+    #réordoner modulo n ie : 1, n+1, 2n +1 , ... , 2, n+2, 2n +2, ...
+    #order(lines(instance.wind_turbines),n_ligne_ss)
+    v2 = []
+    m = length(v1)
+    i = 1
+    while length(v2) != m
+        push!(v2, v1[i])
+        i = mod(i + n, 1:m)
+    end
+    return v2
+    # return v1
+end
+
 function choix_ss(turbine::Location, substation_locations::Vector{Location}, substation_used::Vector{Int})
     """
     Cette fonction choisit la sous station à laquelle on va relier la ligne de turbine.
@@ -89,12 +103,10 @@ function resolution_sixtine(instance::Instance)
     Cette solution consiste à mettre toutes les turbines d'une même ligne sur une même sous station la plus proche.
 
     parser selon lignes
+
     Piste d'amélioration:
-    - optimiser sur le type de station choisi par défault
-    - optimiser sur le type de cable choisi par défault
-    - choix de la ss référente de la ligne
-    - relier les sous stations entre elles
-    - optimiser sur le type de cable choisi pour relier les sous stations entre elles
+    - Limiter le nombre de turbine par station
+    - Attribuer intelligement les stations
     """
 
 
@@ -104,7 +116,11 @@ function resolution_sixtine(instance::Instance)
 
     ss_visited = []
     substation_used = zeros(Int, nb_station_locations(instance))
-    lines_turbines = lines(instance.wind_turbines)
+    n_ligne_ss = length(lines(instance.substation_locations))
+    #Changer ordre parcours ligne_turbine
+    # ! Risque danger parsing
+    lines_turbines = order(lines(instance.wind_turbines), n_ligne_ss)
+
 
     # On choisit un type de ss ( substation_types)
     # On choisit un type de cable pour relier une station à la terre (land_substation_cable_types)
