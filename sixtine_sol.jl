@@ -62,29 +62,29 @@ function order(v1::Vector{Any}, n::Int64)
     #réordoner modulo n ie : 1, n+1, 2n +1 , ... , 2, n+2, 2n +2, ...
     #order(lines(instance.wind_turbines),n_ligne_ss)
 
-    # v2 = [[] for _ in 1:n]
-    # m = length(v1)
-    # k = 1
-    # r = m % n
-    # q = div(m - r, n)
-    # for i in 1:n
-    #     for _ in 1:q
-    #         push!(v2[i], v1[k])
-    #         k += 1
-    #     end
-    #     if r > 0
-    #         push!(v2[i], v1[k])
-    #         k += 1
-    #         r -= 1
-    #     end
-    # end
-    # return v2
-
-    v2 = []
-    for line in v1
-        push!(v2, [line])
+    v2 = [[] for _ in 1:n]
+    m = length(v1)
+    k = 1
+    r = m % n
+    q = div(m - r, n)
+    for i in 1:n
+        for _ in 1:q
+            push!(v2[i], v1[k])
+            k += 1
+        end
+        if r > 0
+            push!(v2[i], v1[k])
+            k += 1
+            r -= 1
+        end
     end
     return v2
+
+    # v2 = []
+    # for line in v1
+    #     push!(v2, [line])
+    # end
+    # return v2
 end
 
 function choix_ss(turbine::Location, substation_locations::Vector{Location}, substation_used::Vector{Int})
@@ -142,6 +142,16 @@ function choix_type_cable_land_ss(land_substation_cable_types::Vector{CableType}
         mini = land_substation_cable_types[id_type_cable-1].probability_of_failure + land_substation_cable_types[id_type_cable-1].variable_cost
         id_type_cable -= 1
     end
+
+    # # Maximiser le rating
+    # id_type_cable = land_substation_cable_types[end].id
+    # max = land_substation_cable_types[end].rating
+    # for q in land_substation_cable_types
+    #     if q.rating > max
+    #         max = q.rating
+    #         id_type_cable = q.id
+    #     end
+    # end
     return id_type_cable
 end
 
@@ -168,6 +178,7 @@ function resolution_sixtine(instance::Instance)
     # ! Risque danger parsing
     lines_turbines = lines(instance.wind_turbines)
     lines_turbines = order(lines_turbines, n_ligne_ss)
+    lines_turbines = reverse(lines_turbines)
 
 
     # On choisit un type de ss ( substation_types)
@@ -183,13 +194,24 @@ function resolution_sixtine(instance::Instance)
 
     type_ss = choix_type_ss(instance.substation_types)
     type_cable = choix_type_cable_land_ss(instance.land_substation_cable_types)
-    for v2 in lines_turbines
-        for line_turbines in v2
-            id_substation, substation_used = choix_ss(first(line_turbines), instance.substation_locations, substation_used)
-            ss_visited = [ss_visited..., id_substation]
-            for turbine in line_turbines
-                turbine_links[turbine.id] = id_substation
+    while lines_turbines != []
+        i = 1
+        while i < length(lines_turbines) + 1
+            v2 = lines_turbines[i]
+            if v2 == []
+                splice!(lines_turbines, i)
+            else
+                line_turbines = pop!(v2)
+                if line_turbines != []
+                    id_substation, substation_used = choix_ss(first(line_turbines), instance.substation_locations, substation_used)
+                    ss_visited = [ss_visited..., id_substation]
+                    for turbine in line_turbines
+                        turbine_links[turbine.id] = id_substation
+                    end
+                end
+                i += 1
             end
+
         end
     end
     for substation in ss_visited
