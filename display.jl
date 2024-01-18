@@ -41,6 +41,7 @@ function display_instance(instance::Instance)
 
     # Display the plot
     display(plot!())
+    savefig("inst_plot.png")
 end
 
 function display_instance_turbines(instance::Instance)
@@ -103,6 +104,7 @@ function display_solution(solution::Solution, instance::Instance)
     # Display the plot
     title!("Cost: " * string(cost(solution, instance)))
     display(plot!())
+    savefig("sol_plot.png")
 end
 
 

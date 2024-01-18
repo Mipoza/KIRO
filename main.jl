@@ -2,7 +2,7 @@ using JSON
 using HiGHS
 using JuMP
 using Random
-
+using Dates
 ENV["GUROBI_HOME"] = "/home/mipoza/Documents/gurobi1100/linux64"
 using Gurobi
 
@@ -12,9 +12,9 @@ include("solution.jl")
 include("parsing.jl")
 include("eval.jl")
 include("sixtine_sol.jl")
+include("scenario_finder.jl")
 
-
-I = read_instance("instances/KIRO-small.json")
+I = read_instance("instances/KIRO-large.json")
 
 #sol = read_solution("small-linear.json", I)
 #println(cost(sol,I))
@@ -46,24 +46,18 @@ function c_prod(model, alpha, beta, mu, M)
     @constraint(model, mu - beta <= 0 )
 end
 
-V_s = I.substation_locations
+V_s = get_last_turbine_col_large(I)
 S = I.substation_types
 V_t = I.wind_turbines
 Q_0 = I.land_substation_cable_types
 Q_s = I.substation_substation_cable_types
-Omega = I.wind_scenarios
+Omega = get_scenario_with_max_power(I, 10)
+#Omega = get_uniform_scecario_distribution(I, 30)
 c_0 = I.curtailing_cost
 c_p = I.curtailing_penalty
 c_max = I.maximum_curtailing
 
-#set_time_limit_sec(model, 60.0)
-
-k = 3
-#selected_indices = randperm(length(Omega))[1:k]
-Omega = Omega[1:2]
-#Omega = Omega[selected_indices]
-
-
+set_time_limit_sec(model, 120.0)
 
 @variable(model, x[1:length(V_s), 1:length(S)], Bin)
 @variable(model, y_0[1:length(V_s), 1:length(Q_0)], Bin)
@@ -207,12 +201,12 @@ println(string("Obj : "),objective_value(model))
 
 t_links = zeros(length(V_t))
 sub = SubStation[]
-sub_cable = zeros(Int,length(V_s),length(V_s))
+sub_cable = zeros(Int,length(I.substation_locations),length(I.substation_locations))
 
 for t in 1:length(V_t)
     for v in 1:length(V_s)
         if value(z[v,t]) > 0
-            t_links[t] = v
+            t_links[t] = V_s[v].id
             break
         end
     end
@@ -223,7 +217,7 @@ for s in 1:length(S)
         if value(x[v,s]) > 0
             for q in 1:length(Q_0)
                 if value(y_0[v,q]) > 0
-                    push!(sub, SubStation(id=v, substation_type=s, land_cable_type=q))    
+                    push!(sub, SubStation(id=V_s[v].id, substation_type=s, land_cable_type=q))    
                     break 
                 end
             end
@@ -231,16 +225,18 @@ for s in 1:length(S)
     end
 end
 
+baty_sol = Solution(turbine_links=t_links,inter_station_cables=sub_cable,substations=sub)
+print(is_feasible(baty_sol, I))
+println(cost(baty_sol, I))
+write_solution(baty_sol, "solutions/last-large.json")
+write_solution(baty_sol, string("solutions/large", Dates.format(now(), "yyyy-mm-ddTHH:MM:SS"), ".json"))
 for v in 1:length(V_s)
-    for v_b in 1:length(V_s)
-        if value(y_s[v,v_b]) > 0
-            println("WARNING Y_S NOT NULL")
+    for s in 1:length(S)
+        if value(x[v,s]) > 0
+            println(V_s[v].id)
         end
     end
 end
-baty_sol = Solution(turbine_links=t_links,inter_station_cables=sub_cable,substations=sub)
-println(cost(baty_sol, I))
-
 """
 println(" x ")
 println(value(x[1,1]))
