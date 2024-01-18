@@ -1,7 +1,6 @@
 using JSON
 using HiGHS
 using JuMP
-using Random
 
 ENV["GUROBI_HOME"] = "/home/mipoza/Documents/gurobi1100/linux64"
 using Gurobi
@@ -16,7 +15,7 @@ include("sixtine_sol.jl")
 
 I = read_instance("instances/KIRO-small.json")
 
-#sol = read_solution("small-linear.json", I)
+#sol = read_solution("tsol.json")
 #println(cost(sol,I))
 
 model = Model(Gurobi.Optimizer)
@@ -56,24 +55,13 @@ c_0 = I.curtailing_cost
 c_p = I.curtailing_penalty
 c_max = I.maximum_curtailing
 
-#set_time_limit_sec(model, 60.0)
-
-k = 3
-#selected_indices = randperm(length(Omega))[1:k]
-Omega = Omega[1:2]
-#Omega = Omega[selected_indices]
-
-
-
 @variable(model, x[1:length(V_s), 1:length(S)], Bin)
 @variable(model, y_0[1:length(V_s), 1:length(Q_0)], Bin)
-@variable(model, y_s[1:length(V_s), 1:length(V_s), 1:length(Q_s)], Bin)
+#@variable(model, y_s[1:length(V_s), 1:length(V_s), 1:length(Q_s)], Bin)
 @variable(model, z[1:length(V_s), 1:length(V_t)], Bin)
 
 @variable(model, ln[1:length(V_s)] >= 0)
 @variable(model, cnp[1:length(V_s), 1:length(Omega)] >= 0)
-@variable(model, cfp1[1:length(V_s), 1:length(Omega)] >= 0)
-@variable(model, pf[1:length(V_s), 1:(length(V_s)), 1:length(Omega)] >= 0)
 @variable(model, lfv[1:length(V_s), 1:(length(V_s))] >= 0)
 @variable(model, cfp2[1:length(V_s), 1:(length(V_s)), 1:length(Omega)] >= 0)
 @variable(model, cfmax[1:length(V_s), 1:length(Omega)] >= 0)
@@ -93,8 +81,6 @@ Omega = Omega[1:2]
 
 cc1 = sum(x[i, j] * S[j].cost for i in 1:length(V_s), j in 1:length(S))
 cc2 = sum(y_0[i, j] * land_cable_cost(I, V_s[i].id, Q_0[j].id) for i in 1:length(V_s), j in 1:length(Q_0))
-#0.5 car y_s symétrique et arrêtes non orientées
-cc3 = sum(0.5*y_s[i, j, k] * inter_station_cable_cost(I, V_s[i].id, V_s[j].id, Q_s[k].id) for i in 1:length(V_s), j in 1:length(V_s), k in 1:length(Q_s))
 cc4 = sum(z[i, j] * turbine_cable_cost(I, V_s[i].id, V_t[j].id) for i in 1:length(V_s), j in 1:length(V_t))
 
 function cf_wv(w, v)
@@ -122,7 +108,7 @@ function cf_sumv(w)
     return sum(cf_wv(w, v) for v in 1:length(V_s))
 end
 
-@objective(model, Min, cc1 + cc2 + cc3 + cc4 + sum( Omega[w].probability*(cf_sumv(w)+ sum(c_0*cnp[i,w] for i in 1:length(V_s)) + c_p*cnmax[w]) for w in 1:length(Omega))) #no problem avec les id scenario et w
+@objective(model, Min, cc1 + cc2  + cc4 + sum( Omega[w].probability*(cf_sumv(w)+ sum(c_0*cnp[i,w] for i in 1:length(V_s)) + c_p*cnmax[w]) for w in 1:length(Omega))) #no problem avec les id scenario et w
 
 #Contraintes
 
@@ -139,20 +125,17 @@ for v in 1:length(V_s)
 
     for w in 1:length(Omega)
         c_positive_part(model, Omega[w].power_generation*sum(z[v,t] for t in 1:length(V_t))-ln[v], cnp[v,w], Mnplusw(I, Omega[w]))
-        c_positive_part(model, Omega[w].power_generation*sum(z[v,t] for t in 1:length(V_t))-sum(Q_s[q].rating*y_s[v,v_b,q] for v_b in 1:length(V_s), q in 1:length(Q_s)), cfp1[v,w], Mfplus1(I, Omega[w]))
         for v_b in 1:length(V_s)
             if v_b != v
-                c_min(model, sum(Q_s[q].rating*y_s[v,v_b,q] for q in 1:length(Q_s)), Omega[w].power_generation*sum(z[v,t] for t in 1:length(V_t)), pf[v,v_b,w], Mfp(I, Omega[w]))
-                c_positive_part(model, Omega[w].power_generation*sum(z[v_b,t] for t in 1:length(V_t)) + pf[v,v_b,w] - lfv[v,v_b] , cfp2[v,v_b,w], Mfplus2w(I, Omega[w]))
+                c_positive_part(model, Omega[w].power_generation*sum(z[v_b,t] for t in 1:length(V_t)) + Omega[w].power_generation*sum(z[v,t] for t in 1:length(V_t)) - lfv[v,v_b] , cfp2[v,v_b,w], Mfplus2w(I, Omega[w]))
             else
-                @constraint(model, pf[v,v_b,w] == 0)
                 @constraint(model, cfp2[v,v_b,w] == 0)
             end
         end
-        c_positive_part(model, cfp1[v,w] + sum(cfp2[v,v_b,w] for v_b in 1:length(V_s)) - c_max , cfmax[v,w], Mcfw(I, Omega[w]))
+        c_positive_part(model, Omega[w].power_generation*sum(z[v,t] for t in 1:length(V_t)) + sum(cfp2[v,v_b,w] for v_b in 1:length(V_s)) - c_max , cfmax[v,w], Mcfw(I, Omega[w]))
 
         for s in 1:length(S)
-            c_prod(model, x[v,s], cfp1[v,w], muxf1[s,v,w], Mfplus1(I, Omega[w]))
+            c_prod(model, x[v,s], Omega[w].power_generation*sum(z[v,t] for t in 1:length(V_t)), muxf1[s,v,w], Mfplus1(I, Omega[w]))
             c_prod(model, x[v,s], sum(cfp2[v,v_b,w] for v_b in 1:length(V_s)), muxf2[s,v,w], length(V_s)*Mfplus2w(I, Omega[w]))
             c_prod(model, x[v,s], cfmax[v,w], muxfmax[s,v,w], Mcfw(I, Omega[w]))
             c_prod(model, x[v,s], sum(cnp[v_b,w] for v_b in 1:length(V_s)), muxn[s,v,w], length(V_s)*Mnplusw(I, Omega[w]))
@@ -160,7 +143,7 @@ for v in 1:length(V_s)
         end
 
         for q in 1:length(Q_0)
-            c_prod(model, y_0[v,q], cfp1[v,w], muyf1[q,v,w], Mfplus1(I, Omega[w]))
+            c_prod(model, y_0[v,q], Omega[w].power_generation*sum(z[v,t] for t in 1:length(V_t)), muyf1[q,v,w], Mfplus1(I, Omega[w]))
             c_prod(model, y_0[v,q], sum(cfp2[v,v_b,w] for v_b in 1:length(V_s)), muyf2[q,v,w], length(V_s)*Mfplus2w(I, Omega[w]))
             c_prod(model, y_0[v,q], cfmax[v,w], muyfmax[q,v,w], Mcfw(I, Omega[w]))
             c_prod(model, y_0[v,q], sum(cnp[v_b,w] for v_b in 1:length(V_s)), muyn[q,v,w], length(V_s)*Mnplusw(I, Omega[w]))
@@ -177,7 +160,6 @@ end
 for v in 1:length(V_s)
     @constraint(model, sum(x[v,s] for s in 1:length(S)) <= 1)
     @constraint(model, sum(y_0[v,q] for q in 1:length(Q_0))-sum(x[v,s] for s in 1:length(S)) == 0)
-    @constraint(model, sum(y_s[v,v_p,q] for q in 1:length(Q_s), v_p in 1:length(V_s)) - sum(x[v,s] for s in 1:length(S)) <=0 )
 end
 
 for t in 1:length(V_t)
@@ -187,66 +169,20 @@ for t in 1:length(V_t)
     end
 end
 
-for q in 1:length(Q_s)
-    for v in 1:length(V_s)
-        for v_p in 1:length(V_s)
-            if v != v_p
-                @constraint(model, y_s[v,v_p,q]- y_s[v_p,v,q]==0)
-            else
-                @constraint(model, y_s[v,v,q] == 0)
-            end
-            
-        end
-    end
-end
 
 optimize!(model)
 
+
 println("*** Values ***")
 println(string("Obj : "),objective_value(model))
-
-t_links = zeros(length(V_t))
-sub = SubStation[]
-sub_cable = zeros(Int,length(V_s),length(V_s))
-
-for t in 1:length(V_t)
-    for v in 1:length(V_s)
-        if value(z[v,t]) > 0
-            t_links[t] = v
-            break
-        end
-    end
-end
-
-for s in 1:length(S)
-    for v in 1:length(V_s)
-        if value(x[v,s]) > 0
-            for q in 1:length(Q_0)
-                if value(y_0[v,q]) > 0
-                    push!(sub, SubStation(id=v, substation_type=s, land_cable_type=q))    
-                    break 
-                end
-            end
-        end
-    end
-end
+println(" x ")
 
 for v in 1:length(V_s)
-    for v_b in 1:length(V_s)
-        if value(y_s[v,v_b]) > 0
-            println("WARNING Y_S NOT NULL")
-        end
+    for s in 1:length(S)
+        println("v=",v,",s=",s," : ",value(x[v,s]))
     end
 end
-baty_sol = Solution(turbine_links=t_links,inter_station_cables=sub_cable,substations=sub)
-println(cost(baty_sol, I))
 
-"""
-println(" x ")
-println(value(x[1,1]))
-println(value(x[1,2]))
-println(value(x[2,1]))
-println(value(x[2,2]))
 println(" z ")
 for v in 1:length(V_s)
     for t in 1:length(V_t)
@@ -259,12 +195,3 @@ for v in 1:length(V_s)
         println("v=",v,",q=",q," : ",value(y_0[v,q]))
     end
 end
-println(" y_s ")
-for v in 1:length(V_s)
-    for v_p in 1:length(V_s)
-        for q in 1:length(Q_s)
-            println("v=",v,",v'=",v_p,",q=",q," : ",value(y_s[v,v_p,q]))
-        end
-    end
-end
-"""
