@@ -32,3 +32,40 @@ function get_last_turbine_col_large(I::Instance)
     indices = [1, 8, 15, 22, 29]
     return I.substation_locations[indices]
 end
+
+function get_large_turbine_partition(I::Instance)
+    S1 = []
+    S2 = []
+    S3 = []
+
+    for s in 1:length(I.wind_turbines)
+        if I.wind_turbines[s].y < -1.3
+            push!(S1, s)
+        elseif I.wind_turbines[s].y > -1.3 && I.wind_turbines[s].y < 1.8
+            push!(S2, s)
+        else
+            push!(S3, s)
+        end
+    end
+    return [S1, S2, S3]    
+end
+
+function get_large_station_partition(I::Instance)
+    S1 = []
+    S2 = []
+    S3 = []
+
+    for s in 1:length(I.substation_locations)
+        if I.substation_locations[s].y <= -1.3
+            push!(S1, s)
+        elseif I.substation_locations[s].y > -2 && I.substation_locations[s].y <= 2
+            push!(S2, s)
+        else
+            push!(S3, s)
+        end
+    end
+    return [S1, S2, S3]    
+end
+
+I = read_instance("instances/KIRO-large.json")
+print(get_large_station_partition(I))
