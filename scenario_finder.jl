@@ -29,6 +29,13 @@ function get_last_turbine_line(I::Instance)
 end
 
 function get_last_turbine_col_large(I::Instance)
-    indices = [1, 8, 15, 22, 29]
+    #indices = [1, 8, 15, 22, 29] #large
+    #indices = [3,8,13,18,23,28] #medium
+    #indices = [3,8,13,18,28]
+    #indices = [4,13,22,31,40,49,58,67,76, 8,17,26,35,44,53,62,71,80] #semifull huge
+    indices = [4,13,22,31,40,49,58,67,76]
+    #indices = [22,49,67,76]
+    #indices = [67]
+    indices = [4,67]
     return I.substation_locations[indices]
 end

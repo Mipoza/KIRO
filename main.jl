@@ -14,7 +14,9 @@ include("eval.jl")
 include("sixtine_sol.jl")
 include("scenario_finder.jl")
 
-I = read_instance("instances/KIRO-large.json")
+
+I_type = "huge"
+I = read_instance("instances/KIRO-" * I_type * ".json")
 
 #sol = read_solution("small-linear.json", I)
 #println(cost(sol,I))
@@ -51,13 +53,13 @@ S = I.substation_types
 V_t = I.wind_turbines
 Q_0 = I.land_substation_cable_types
 Q_s = I.substation_substation_cable_types
-Omega = get_scenario_with_max_power(I, 10)
+Omega = get_scenario_with_max_power(I, 100)
 #Omega = get_uniform_scecario_distribution(I, 30)
 c_0 = I.curtailing_cost
 c_p = I.curtailing_penalty
 c_max = I.maximum_curtailing
 
-set_time_limit_sec(model, 120.0)
+set_time_limit_sec(model, 300.0)
 
 @variable(model, x[1:length(V_s), 1:length(S)], Bin)
 @variable(model, y_0[1:length(V_s), 1:length(Q_0)], Bin)
@@ -88,7 +90,8 @@ set_time_limit_sec(model, 120.0)
 cc1 = sum(x[i, j] * S[j].cost for i in 1:length(V_s), j in 1:length(S))
 cc2 = sum(y_0[i, j] * land_cable_cost(I, V_s[i].id, Q_0[j].id) for i in 1:length(V_s), j in 1:length(Q_0))
 #0.5 car y_s symétrique et arrêtes non orientées
-cc3 = sum(0.5*y_s[i, j, k] * inter_station_cable_cost(I, V_s[i].id, V_s[j].id, Q_s[k].id) for i in 1:length(V_s), j in 1:length(V_s), k in 1:length(Q_s))
+cc3 = 0
+#cc3 = sum(0.5*y_s[i, j, k] * inter_station_cable_cost(I, V_s[i].id, V_s[j].id, Q_s[k].id) for i in 1:length(V_s), j in 1:length(V_s), k in 1:length(Q_s))
 cc4 = sum(z[i, j] * turbine_cable_cost(I, V_s[i].id, V_t[j].id) for i in 1:length(V_s), j in 1:length(V_t))
 
 function cf_wv(w, v)
@@ -185,7 +188,8 @@ for q in 1:length(Q_s)
     for v in 1:length(V_s)
         for v_p in 1:length(V_s)
             if v != v_p
-                @constraint(model, y_s[v,v_p,q]- y_s[v_p,v,q]==0)
+                @constraint(model, y_s[v,v,q] == 0)
+                #@constraint(model, y_s[v,v_p,q]- y_s[v_p,v,q]==0)
             else
                 @constraint(model, y_s[v,v,q] == 0)
             end
@@ -228,8 +232,8 @@ end
 baty_sol = Solution(turbine_links=t_links,inter_station_cables=sub_cable,substations=sub)
 print(is_feasible(baty_sol, I))
 println(cost(baty_sol, I))
-write_solution(baty_sol, "solutions/last-large.json")
-write_solution(baty_sol, string("solutions/large", Dates.format(now(), "yyyy-mm-ddTHH:MM:SS"), ".json"))
+write_solution(baty_sol, "solutions/last-" * I_type * ".json")
+write_solution(baty_sol, string("solutions/" * I_type, Dates.format(now(), "yyyy-mm-ddTHH:MM:SS"), ".json"))
 for v in 1:length(V_s)
     for s in 1:length(S)
         if value(x[v,s]) > 0
