@@ -56,7 +56,7 @@ function display_instance_turbines(instance::Instance)
 end
 
 
-function display_solution(solution::Solution, instance::Instance)
+function display_solution(solution::Solution, instance::Instance, path="sol_plot.png")
     V_t = instance.wind_turbines
     V_s = instance.substation_locations
 
@@ -104,7 +104,7 @@ function display_solution(solution::Solution, instance::Instance)
     # Display the plot
     title!("Cost: " * string(cost(solution, instance)))
     display(plot!())
-    savefig("sol_plot.png")
+    savefig(path)
 end
 
 
