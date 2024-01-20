@@ -44,35 +44,48 @@ function get_large_turbine_partition(I::Instance)
     S1 = []
     S2 = []
     S3 = []
+    S4 = I.wind_turbines
 
-    for s in 1:length(I.wind_turbines)
-        if I.wind_turbines[s].y < -1.3
-            push!(S1, s)
-        elseif I.wind_turbines[s].y > -1.3 && I.wind_turbines[s].y < 1.8
-            push!(S2, s)
+    for s in 1:length(I.wind_turbines)  
+        """      
+        if I.wind_turbines[s].y < -1.2
+            push!(S1, I.wind_turbines[s])
+        elseif I.wind_turbines[s].y > -1.2 && I.wind_turbines[s].y < 1.2
+            push!(S2, I.wind_turbines[s])
         else
-            push!(S3, s)
+            push!(S3, I.wind_turbines[s])
+        end
+        """
+        if I.wind_turbines[s].y < 0.2
+            push!(S2, I.wind_turbines[s])
+        else
+            push!(S3, I.wind_turbines[s])
         end
     end
-    return [S1, S2, S3]    
+    return [S4]   
 end
 
 function get_large_station_partition(I::Instance)
-    S1 = []
-    S2 = []
-    S3 = []
-
+    S1 = [I.substation_locations[8]]
+    S2 = [I.substation_locations[15], I.substation_locations[8]]
+    S3 = [I.substation_locations[22]]
+    S4 = [I.substation_locations[8], I.substation_locations[15], I.substation_locations[22]]
+    indices = [1, 8, 15, 22, 29]
+    """
     for s in 1:length(I.substation_locations)
-        if I.substation_locations[s].y <= -1.3
-            push!(S1, s)
-        elseif I.substation_locations[s].y > -2 && I.substation_locations[s].y <= 2
-            push!(S2, s)
-        else
-            push!(S3, s)
-        end
+        if I.substation_locations[s].id in indices
+            if I.substation_locations[s].y <= -1 && I.substation_locations[s].y > -2
+                #push!(S1, I.substation_locations[s])
+            end
+            if I.substation_locations[s].y > -2 && I.substation_locations[s].y <= 2
+                push!(S2, I.substation_locations[s])
+            end
+            if I.substation_locations[s].y > 1 && I.substation_locations[s].y <= 2
+                push!(S3, I.substation_locations[s])
+            end
+        end 
     end
-    return [S1, S2, S3]    
+    """
+    return [S4]    
 end
 
-I = read_instance("instances/KIRO-large.json")
-print(get_large_station_partition(I))
