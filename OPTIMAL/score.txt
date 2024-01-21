@@ -1,0 +1,5 @@
+Huge -> 6168
+Large -> 9425
+Medium -> 6490
+Small -> 3244
+Tiny -> 105641

@@ -56,7 +56,7 @@ function display_instance_turbines(instance::Instance)
 end
 
 
-function display_solution(solution::Solution, instance::Instance, path="sol_plot.png")
+function display_solution(solution::Solution, instance::Instance, path="OPTIMAL/", title="")
     V_t = instance.wind_turbines
     V_s = instance.substation_locations
 
@@ -102,8 +102,11 @@ function display_solution(solution::Solution, instance::Instance, path="sol_plot
     # plot!([-5, 85], [-10, 10], legend=false)
 
     # Display the plot
-    title!("Cost: " * string(cost(solution, instance)))
+    # title!("Cost: " * string(cost(solution, instance)))
+    title!("Solution de l'instance " * title)
     display(plot!())
+
+    path = path * title * ".png"
     savefig(path)
 end
 
@@ -150,18 +153,18 @@ end
 # ------------- Exemple d'utilisation -------------
 
 
-txt = "KIRO-huge"
-I = read_instance("instances/" * txt * ".json")
+txt = "tiny"
+I = read_instance("instances/KIRO-" * txt * ".json")
 sol::Solution = resolution_sixtine(I)
-write_solution(sol, "solutions/" * txt * "2.json")
+# write_solution(sol, "solutions/KIRO-" * txt * "2.json")
 # solution = read_solution("solutions/" * txt * ".json", I)
-solution2 = read_solution("solutions/" * txt * "2.json", I)
+solution2 = read_solution("OPTIMAL/KIRO-" * txt * "-sol_9.json", I)
 
 
 # display_instance(I)
 # display_instance_turbines(I)
 # display_solution(solution, I)
-display_solution(solution2, I)
+display_solution(solution2, I, "OPTIMAL/", txt)
 
 # print(cost(solution, I))
 # print(cost(solution2, I))
